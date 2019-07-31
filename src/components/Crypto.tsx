@@ -132,6 +132,7 @@ export default () => {
           onDrop={checkDraggedFile}
           data-on-drag={dragover}
           data-no-image={!encryptionTargetImage}
+          data-hover={true}
         />
         <Button onClick={encrypt}>{'encrypt'}</Button>
         <EncryptedData
@@ -155,6 +156,7 @@ export default () => {
         <Image
           style={{ backgroundImage: `url(${decryptedData})` }}
           data-no-image={!encryptionTargetImage}
+          data-hover={false}
         />
       </Section>
     </Container>
@@ -217,10 +219,15 @@ const Image = styled.div`
   background-size: contain;
   background-position: center;
   background-repeat: no-repeat;
-  /* background-color: #eee; */
 
   &[data-on-drag='true'] {
     background-color: #eee;
+  }
+
+  &[data-hover='true'][data-no-image='true'] {
+    &:hover {
+      background-color: #f5f5f5;
+    }
   }
 
   &[data-no-image='true'] {
@@ -258,6 +265,13 @@ const Button = styled.button`
   padding: 10px;
   outline: none;
   margin-bottom: 40px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-image: linear-gradient(0deg, #eee, #fff);
   font-size: 14px;
   cursor: pointer;
+
+  &:hover {
+    background-image: linear-gradient(0deg, #e5e5e5, #f5f5f5);
+  }
 `
