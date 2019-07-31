@@ -4,12 +4,13 @@ import styled from 'styled-components'
 import * as Crypto from 'crypto-js'
 
 export default () => {
-  const [encryptionPassword, setEncryptionPassword] = useState('')
-  const [decryptionPassword, setDecryptionPassword] = useState('')
+  const [encryptionKey, setEncryptionKey] = useState('')
+  const [decryptionKey, setDecryptionKey] = useState('')
   const [encryptionTargetImage, setEncryptionTargetImage] = useState('')
   const [encryptedData, setEncryptedData] = useState('')
   const [decryptionTarget, setDecryptionTarget] = useState('')
   const [decryptedData, setDecryptedData] = useState('')
+  const [dragover, setDragover] = useState(false)
 
   const ImageInput = useRef<HTMLInputElement>(null)
 
@@ -27,28 +28,24 @@ export default () => {
     }
   }
 
-  const enterEncryptionPassword = (
-    event: React.FormEvent<HTMLInputElement>
-  ) => {
+  const enterEncryptionKey = (event: React.FormEvent<HTMLInputElement>) => {
     const target = event.target as HTMLInputElement | null
     if (!target) {
       return
     }
 
     const value = target.value
-    setEncryptionPassword(value)
+    setEncryptionKey(value)
   }
 
-  const enterDecryptionPassword = (
-    event: React.FormEvent<HTMLInputElement>
-  ) => {
+  const enterDecryptionKey = (event: React.FormEvent<HTMLInputElement>) => {
     const target = event.target as HTMLInputElement | null
     if (!target) {
       return
     }
 
     const value = target.value
-    setDecryptionPassword(value)
+    setDecryptionKey(value)
   }
 
   const enterEncryptedData = (event: React.FormEvent<HTMLTextAreaElement>) => {
@@ -62,17 +59,22 @@ export default () => {
   }
 
   const encrypt = () => {
-    const password = Crypto.SHA256(encryptionPassword)
-    const hashbase64 = password.toString(Crypto.enc.Base64)
+    const key = Crypto.SHA256(encryptionKey)
+    const hashbase64 = key.toString(Crypto.enc.Base64)
     const encrypted = Crypto.AES.encrypt(encryptionTargetImage, hashbase64)
     setEncryptedData(encrypted.toString())
   }
 
   const decrypt = () => {
-    const password = Crypto.SHA256(decryptionPassword)
-    const hashbase64 = password.toString(Crypto.enc.Base64)
-    const decrypted = Crypto.AES.decrypt(decryptionTarget, hashbase64)
-    setDecryptedData(decrypted.toString(Crypto.enc.Utf8))
+    const key = Crypto.SHA256(decryptionKey)
+    const hashbase64 = key.toString(Crypto.enc.Base64)
+
+    try {
+      const decrypted = Crypto.AES.decrypt(decryptionTarget, hashbase64)
+      setDecryptedData(decrypted.toString(Crypto.enc.Utf8))
+    } catch (error) {
+      alert(error)
+    }
   }
 
   const checkInputFile = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -84,13 +86,30 @@ export default () => {
     }
   }
 
+  const checkDraggedFile = (event: React.DragEvent) => {
+    event.preventDefault()
+
+    const files = event.dataTransfer.files
+    if (files) {
+      fileReader.readAsDataURL(files[0])
+    }
+  }
+
+  const onDragover = () => {
+    setDragover(true)
+  }
+
+  const onDragleave = () => {
+    setDragover(false)
+  }
+
   return (
     <Container>
       <Section>
         <Title>{'Encryption'}</Title>
-        <Password
-          onInput={enterEncryptionPassword}
-          placeholder={'password...'}
+        <Key
+          onInput={enterEncryptionKey}
+          placeholder={'encryption key...'}
           type={'password'}
         />
         <Input
@@ -100,22 +119,43 @@ export default () => {
           onChange={checkInputFile}
         />
         <Image
-          style={{ backgroundImage: `url(${encryptionTargetImage})` }}
+          style={{
+            backgroundImage: `url(${encryptionTargetImage})`,
+            cursor: 'pointer'
+          }}
           onClick={openImageSelector}
+          onDragOver={event => {
+            checkDraggedFile(event)
+            onDragover()
+          }}
+          onDragLeave={onDragleave}
+          onDrop={checkDraggedFile}
+          data-on-drag={dragover}
+          data-no-image={!encryptionTargetImage}
         />
         <Button onClick={encrypt}>{'encrypt'}</Button>
-        <EncryptedData value={encryptedData} disabled={true} />
+        <EncryptedData
+          value={encryptedData}
+          placeholder={'encrypted data...'}
+          disabled={true}
+        />
       </Section>
       <Section>
         <Title>{'Decryption'}</Title>
-        <Password
-          onInput={enterDecryptionPassword}
-          placeholder={'password...'}
+        <Key
+          onInput={enterDecryptionKey}
+          placeholder={'encryption key...'}
           type={'password'}
         />
-        <EncryptedData onInput={enterEncryptedData} />
+        <EncryptedData
+          onInput={enterEncryptedData}
+          placeholder={'encrypted data...'}
+        />
         <Button onClick={decrypt}>{'decrypt'}</Button>
-        <Image style={{ backgroundImage: `url(${decryptedData})` }} />
+        <Image
+          style={{ backgroundImage: `url(${decryptedData})` }}
+          data-no-image={!encryptionTargetImage}
+        />
       </Section>
     </Container>
   )
@@ -151,13 +191,15 @@ const Title = styled.h2`
   color: #aaa;
 `
 
-const Password = styled.input`
-  width: 300px;
+const Key = styled.input`
+  appearance: none;
+  width: 400px;
   height: 40px;
   box-sizing: border-box;
   margin-bottom: 40px;
   padding: 8px;
   outline: none;
+  border: 1px solid #ccc;
   font-size: 14px;
 `
 
@@ -166,21 +208,49 @@ const Input = styled.input`
 `
 
 const Image = styled.div`
-  width: 300px;
-  height: 300px;
+  position: relative;
+  width: 400px;
+  height: 400px;
   box-sizing: border-box;
   margin-bottom: 40px;
   border: 1px solid #ccc;
   background-size: contain;
   background-position: center;
   background-repeat: no-repeat;
+  /* background-color: #eee; */
+
+  &[data-on-drag='true'] {
+    background-color: #eee;
+  }
+
+  &[data-no-image='true'] {
+    &::after {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100px;
+      height: 14px;
+      font-size: 14px;
+      line-height: 1;
+      margin: auto;
+      text-align: center;
+      content: 'image';
+    }
+  }
 `
 
 const EncryptedData = styled.textarea`
-  width: 300px;
-  height: 150px;
-  resize: none;
+  appearance: none;
+  width: 400px;
+  height: 400px;
+  box-sizing: border-box;
   margin-bottom: 40px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  outline: none;
+  resize: none;
 `
 
 const Button = styled.button`
@@ -188,4 +258,6 @@ const Button = styled.button`
   padding: 10px;
   outline: none;
   margin-bottom: 40px;
+  font-size: 14px;
+  cursor: pointer;
 `
