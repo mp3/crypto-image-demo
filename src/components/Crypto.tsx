@@ -4,8 +4,12 @@ import styled from 'styled-components'
 export default () => {
   return (
     <Container>
-      <Encryption />
-      <Decryption />
+      <Section>
+        <Title>{'Encryption'}</Title>
+      </Section>
+      <Section>
+        <Title>{'Decryption'}</Title>
+      </Section>
     </Container>
   )
 }
@@ -15,14 +19,19 @@ const Container = styled.div`
   justify-content: center;
   align-items: center;
   height: 100%;
-  background-color: #000;
+  background-color: #fff;
   font-family: sans-serif;
 `
 
-const Encryption = styled.div`
+const Section = styled.section`
+  width: 100%;
   height: 100%;
+  box-sizing: border-box;
+  padding: 20px;
 `
 
-const Decryption = styled.div`
-  height: 100%;
+const Title = styled.h2`
+  margin-bottom: 20px;
+  font-size: 24px;
+  text-align: center;
 `
