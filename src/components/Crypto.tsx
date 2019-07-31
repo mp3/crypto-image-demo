@@ -155,7 +155,7 @@ export default () => {
         <Button onClick={decrypt}>{'decrypt'}</Button>
         <Image
           style={{ backgroundImage: `url(${decryptedData})` }}
-          data-no-image={!encryptionTargetImage}
+          data-no-image={!decryptedData}
           data-hover={false}
         />
       </Section>
