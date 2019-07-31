@@ -41,10 +41,9 @@ module.exports = {
       {
         enforce: 'pre',
         test: /\.tsx?$/,
-        loader: 'tslint-loader',
+        loader: 'eslint-loader',
         exclude: /(node_modules)/,
         options: {
-          configFile: 'tslint.json',
           fix: true,
         },
       },
